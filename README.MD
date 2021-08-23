@@ -4,9 +4,6 @@
 
 This is a form validation module that I use in multiple projects to keep things consistent.
 
-This public repo is **usually not** the latest version, however I figured I would keep a somewhat more stable and tested
-version here just in case.
-
 ## Usage
 
 - Use **PHP 8.0**

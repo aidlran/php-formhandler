@@ -2,6 +2,8 @@
 
 	namespace aidlo;
 
+	use JetBrains\PhpStorm\ArrayShape;
+
 	final class FormHandler {
 
 		/** Data type constants for FormHandler::validate_form(). */
@@ -10,14 +12,16 @@
 				TYPE_FLOAT	=  2,
 				TYPE_EMAIL	= 11;
 
-		private static function generate_error(string $message): array {
+		#[ArrayShape(['ok' => "false", 'err' => "string"])]
+		private static function generateError(string $message): array {
 			return [
 				'ok' => false,
 				'err' => $message
 			];
 		}
 
-		private static function generate_success(): array {
+		#[ArrayShape(['ok' => "bool"])]
+		private static function generateSuccess(): array {
 			return ['ok' => true];
 		}
 
@@ -62,16 +66,16 @@
 		 * </b><br>		If validation was not passed, this key will be included with a relevent error message that can
 		 * 				be presented to the user.
 		 */
-		public static function validate_form(array $field_info): array
+		public static function validateForm(array $field_info): array
 		{
 			if ($_SERVER['REQUEST_METHOD'] != 'POST')
-				return self::generate_error('The request method was not POST.');
+				return self::generateError('The request method was not POST.');
 			else foreach ($field_info as $field) {
 				// Figure out what to do with a blank field. If it is required, the form is not valid and an error is
 				// generated. If it is provided but empty, unset it and proceed to the next field.
 				if (($value = isset($_POST[$field['name']]) ? trim($_POST[$field['name']]) : '') == '')
 					if (isset($field['required']) && $field['required'])
-						return self::generate_error($field['label'] . ' is required.');
+						return self::generateError($field['label'] . ' is required.');
 					else {
 						unset($_POST[$field['name']]);
 						continue;
@@ -83,22 +87,22 @@
 						case self::TYPE_EMAIL:
 							$value = filter_var($value, FILTER_SANITIZE_EMAIL);
 							if (!filter_var($value, FILTER_VALIDATE_EMAIL))
-								return self::generate_error('Invalid email address provided.');
+								return self::generateError('Invalid email address provided.');
 							$field['max-size'] = 254;
 							break;
 						case self::TYPE_INT:
 							if (!preg_match('/^-?\d+$/', $value))
-								return self::generate_error($field['label'] . ' must be an integer.');
+								return self::generateError($field['label'] . ' must be an integer.');
 							break;
 						case self::TYPE_FLOAT:
 							if (!preg_match('/^-?\d+(\.\d+)?$/', $value))
-								return self::generate_error($field['label'] . ' must be a number.');
+								return self::generateError($field['label'] . ' must be a number.');
 							break;
 					}
 
 					// Integer validation
 					if ($field['type'] == self::TYPE_INT && !preg_match('/^-?\d+$/', $value))
-						return self::generate_error($field['label'] . ' must be an integer.');
+						return self::generateError($field['label'] . ' must be an integer.');
 
 					// Get size for checking against min/max-size
 					if (($size = match ($field['type']) {
@@ -109,19 +113,19 @@
 					{
 						// Check against min-max-size
 						if (isset($field['max-size']) && $field['max-size'] < $size)
-							return self::generate_error(match (($field['type'])) {
+							return self::generateError(match (($field['type'])) {
 								self::TYPE_STRING	=> $field['label'] . ' too long (maximum ' . $field['max-size'] . ' characters.)',
 								default				=> $field['label'] . ' too big (max: ' . $field['max-size'] . ')'
 							});
 						if (isset($field['min-size']) && $field['min-size'] > $size)
-							return self::generate_error(match (($field['type'])) {
+							return self::generateError(match (($field['type'])) {
 								self::TYPE_STRING	=> $field['label'] . ' too short (minimum ' . $field['min-size'] . ' characters.)',
 								default				=> $field['label'] . ' too small (min: ' . $field['min-size'] . ')'
 							});
 					}
 				}
 			}
-			return self::generate_success();
+			return self::generateSuccess();
 		}
 
 		private function __construct(){}
